@@ -1,0 +1,63 @@
+******************************** c4ctus  *********************************
+*                   Compute 4C Tracks on U'r server
+*
+* This series of script in intended to compute 4C-seq tracks.
+*
+* It mostly relies on the strategies used in HTSstation developed by the BBCF
+* (EPFL, Lausanne, Switzerland)
+* [https://doi.org/10.1371/journal.pone.0085879]
+* [https://github.com/bbcf/bbcflib]
+* [https://github.com/bbcf/bbcfutils]
+*
+* It is made of the following scripts
+***************************************************************************
+
+
+#----------------------- DEMULTIPLEXING -----------------------#
+  c4ctus_Demult.sh         -f <FastQ> -p <PrimerFile> -g <GroupName>
+                           [--Ncpu <Nbr cpu>  --trim <True|False>]
+                           [options]
+
+#-------------------------- MAPPING ---------------------------#
+#single file
+  c4ctus_Mapping.sh        -f <FastQReadFile> -g <Genome Assembly>
+                           [--maxhits <VALUE>]
+#multiple files
+  c4ctus_MultiMapping.sh   -p <PrimerFile> -g <GroupName> 
+                           --genome <Assembly>
+                           [--Ncpu <NumTHREADS>]
+
+#--------------------------- 4C-SEQ ---------------------------#
+#single file
+  c4ctus_4Cseq.sh          --lib4C <4CLib> --genome <Assembly>
+                           -f <MapDensityFwd> -r <MapDensityRev>
+                           -e <RegToExclude> -w <RollWindowSize>
+                           [-n <NickName>]
+#multiple files
+  c4ctus_Multi4Cseq.sh     --lib4C <4CLib> --primer <PrimerFile> 
+                           --group <GroupName> --genome <Assembly>
+                           [--Ncpu <NumTHREADS>]
+                           [--window <RollWindowSize>] 
+
+#--------------------- NORMALIZE 4C-TRACKS -------------------#
+  c4ctus_Normalize.sh      -f <SQL> --Excl <chrA:pos1-pos2>
+                           --LeftTAD <Coordinate>
+                           --rightTAD <Coordinate>
+                           [-o <output file>]
+
+#------------------------ DOMAINOGRAMS -----------------------#
+  c4ctus_Domainogram.sh    -i <SQL_file>
+                           [options]
+(experimental)
+  RePlotDomainogram.R      <domainograms.RData file> <OutputFile>
+
+#------------------------ CREATE 4C-LIB ----------------------#
+  c4ctus_4CLib.sh         --fasta <GenomeFasta>
+                          --genome <GenomeNickName>
+                          --PrimaryEnzyme <PrimaryRestrEnzyme>
+                          --SecondaryEnzyme <SecondaryRestrEnzyme>
+                          --length <SegmentLength>
+                         [--output <OutputFolder]
+                         [--rmsk GenomeRmskTab]
+
+#-------------------------------------------------------------#
