@@ -137,7 +137,7 @@ The sequence contains the first 18 base pairs of the forward primer used for amp
 
 The description line is composed of the following fields separated by the pipe character `|` without space:
 
-	1. `>`
+	1. >
 	2. The barcode (= primer) name
 	3. The sequence from the 5' end of the primer up to the primary restriction included (eg. GATC for DpnII)
 	4. Coordinates of the viewpionts using the format chrN:pos1-pos2, pos1 and pos2 being the coordinates the two consecutive primary restriction sites.
@@ -166,8 +166,8 @@ A small fastq file (only 500,000 reads, from 4 viewpoints) can be found in test_
 Create an empty folder, then:
 
 	#Download the test dataset and primer file
-	🔴 wget https://github.com/NoordermeerLab/c4ctus/test_dataset/mm10/mm10_SmallSubset.fastq.gz
-	🔴 wget wget https://github.com/NoordermeerLab/c4ctus/test_dataset/mm10/barcode.fa
+	wget https://github.com/NoordermeerLab/c4ctus/blob/main/test_dataset/mm10/mm10_SmallSubset.fastq.gz
+	wget https://github.com/NoordermeerLab/c4ctus/blob/main/test_dataset/mm10/barcode.fa
 	
 	
 	#Download Mouse mm10 fasta sequence
@@ -213,7 +213,7 @@ This generates a `4CLib` folder containing:
 This outputs:
 
 - 4 demultiplexed fastq.gz files
-- a FileList text foile
+- a FileList text file
 - a PDF demultiplexing report
 - a debug folder containing informations for debugging, which you can most probably delete.
 
