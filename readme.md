@@ -299,8 +299,8 @@ The 4C-seq modules count reads mapping at each ends of each valid restriction fr
 
 As for the mapping step, there are two ways to compute 4C-seq scores using the mapping densities: 
 
-- option 1: Either the fwd and rev density comming from each viewpoint are processed together, but **one viewpoint at a time**. This requires one instruction per viewpoint.
-- option 2: Either the fwd and rev density comming from each viewpoint are processed together and for **all** the viewpoint.
+- option 1: Either the fwd and rev density coming from each viewpoint are processed together, but **one viewpoint at a time**. This requires one instruction per viewpoint.
+- option 2: Either the fwd and rev density coming from each viewpoint are processed together and for **all** the viewpoint.
 
 
 #### option 1
