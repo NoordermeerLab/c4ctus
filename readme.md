@@ -28,8 +28,13 @@
 
 ## 3- Install
 
-Add all the bins to your PATH.
+### step 1:
+Clone **c4ctus** repository: `git clone https://github.com/NoordermeerLab/c4ctus.git`
 
+Then, add the c4ctus_bin folder to your path
+
+
+### step 2:
 ⚠️ **Before using c4ctus, update** the following lines of the listed scripts:⚠️
 
 - c4ctus_4C-seq.sh: 
@@ -43,8 +48,12 @@ Add all the bins to your PATH.
 
 ## 4- List of tools (steps)
 
+Calling `c4ctus.sh` displays the following list of tools (with a bit less details)
 
-### a) CREATE 4C-LIB
+Calling a specific `c4ctus_[TOOL].sh` echoes the usage and help.
+
+
+### a) To create the 4C-Library
 ```
   c4ctus_4CLib.sh         --fasta <GenomeFasta>
                           --genome <GenomeNickName>
@@ -57,7 +66,7 @@ Add all the bins to your PATH.
 ```
 
                          
-### b) DEMULTIPLEXING
+### b) To demultiplex the RAW 4C reads and assigned reads to each viewpoint
 ```
   c4ctus_Demult.sh         -f <FastQ> 
                            -p <PrimerFile> 
@@ -68,7 +77,7 @@ Add all the bins to your PATH.
 ```
 
 
-### c) MAPPING
+### c) To map the demultiplexed reads
 
 #### single file
 ```
@@ -85,7 +94,7 @@ Add all the bins to your PATH.
 ```
 
 
-### d) 4C-SEQ
+### d) To convert the mapping densities into 4C-seq scores
 
 #### single file
 ```
@@ -104,7 +113,7 @@ Add all the bins to your PATH.
 ```
 
 
-### e) NORMALIZE 4C-TRACKS
+### e) To Normalize 4C-seq scores
 ```
   c4ctus_Normalize.sh      -f <SQL> --Excl <chrA:pos1-pos2>
                            --LeftTAD <Coordinate>
@@ -113,7 +122,7 @@ Add all the bins to your PATH.
 ```
 
 
-### f) DOMAINOGRAMS
+### f) To compute domainograms and call significant BRICKS from 4C-seq scores
 ```
   c4ctus_Domainogram.sh    -i <SQL_file>
                            [options]
@@ -133,7 +142,7 @@ Add all the bins to your PATH.
 
 As any fasta file, it is composed of a description line (starting with `>`) and followed by a sequence. The sequence information is needed for demultiplexing the reads. The description line contains informations used for the demultiplexing, 4C-seq and Normalization steps.
 
-The sequence contains the first 18 base pairs of the forward primer used for amplification (don't include Illumina adapters).
+The sequence contains the **first 18 base pairs** of the forward primer used for amplification (don't include Illumina adapters).
 
 The description line is composed of the following fields separated by the pipe character `|` without space:
 
@@ -158,12 +167,10 @@ The description line is composed of the following fields separated by the pipe c
 
 ## 5- Long Help (Tutorial) with test dataset
 
-A small fastq file (only 500,000 reads, from 4 viewpoints) can be found in test_dataset/mm10 folder to test the script functionalities. The corresponding primer file `barcode.fa` can be found in the same folder.
+A small fastq file (`mm10_SmallSubset.fastq.gz`, only 500,000 reads, from 4 viewpoints) can be found in test_dataset/mm10 folder to test **c4ctus** functionalities. The corresponding primer file `barcode.fa` can be found in the same folder.
 
 
-### a) To follow this tutorial, download test_dataset, genome sequence and RMSK
-
-Create an empty folder, then:
+### a) To follow this tutorial, create an empty folder containing the test_dataset, mm10 genome sequence and mm10 RMSK
 
 	#Download the test dataset and primer file
 	wget https://github.com/NoordermeerLab/c4ctus/blob/main/test_dataset/mm10/mm10_SmallSubset.fastq.gz
@@ -187,12 +194,16 @@ Follow the steps below. All **c4ctus** instructions be called from the folder th
 
 ### b) Generate 4C-Lib
 
+The 4C libary contains the list of a valid restriction fragments. Valid restriction fragments are defined as restriction fragments for which the agencement of the primary - secondary restriction sites are compatible with 4C-seq reads mapping (more details in [David et al. 2014](https://doi.org/10.1371/journal.pone.0085879) Supplementary file 1). 
+
+The restriction fragments are flagged if the extremities overlap repeats.
+
 	c4ctus_4CLib.sh --fasta mm10.fa \
-                   --genome mm10 \
-                   --PrimaryEnzyme DpnII \
-                   --SecondaryEnzyme NlaIII \
-                   --length 30 
-                   --rmsk rmsk.txt
+                    --genome mm10 \
+                    --PrimaryEnzyme DpnII \
+                    --SecondaryEnzyme NlaIII \
+                    --length 30 
+                    --rmsk rmsk.txt
 
 This generates a `4CLib` folder containing:
 
@@ -205,14 +216,16 @@ This generates a `4CLib` folder containing:
 
 ### c) Demultiplexing Reads
 
+The demultiplexing steps permit to allocate RAW reads to the corresponding viewpoint. This is done by identifying (and trimming (optional)) the 5'-end of each Illumina reads. It relies on [exonerate](https://www.ebi.ac.uk/about/vertebrate-genomics/software/exonerate). Details are also available in [David et al. 2014](https://doi.org/10.1371/journal.pone.0085879) Supplementary file 1. 
+
 	c4ctus_Demult.sh --fastq mm10_SmallSubset.fastq.gz \
-                    --primer barcode.fa \
-                    --group mm10_Prefix
+                     --primer barcode.fa \
+                     --group mm10_Prefix
           
 
-This outputs:
+This outputs a `Demultiplexing` folder containing:
 
-- 4 demultiplexed fastq.gz files
+- 4 demultiplexed fastq.gz files, named as follows: `[GROUP]_[BARCODE-NAME].fastq.gz`
 - a FileList text file
 - a PDF demultiplexing report
 - a debug folder containing informations for debugging, which you can most probably delete.
@@ -227,43 +240,49 @@ This outputs:
 
 ### d) Mapping the reads
 
-There are two ways to map the reads: 
+- Mapping relies on `bowtie2`, with the following parameters:
+	- `-k 20`
+	- `--end-to-end`
+	- `--sensitive`
 
-- option 1: Either the reads coming from each viewpoint are mapped one viewpoint at a time. This requires one instruction per viewpoint.
-- option 2: Either the reads coming from **all** the viewpoints are mapped in a single instruction. Each mapping is single threaded. Up to `<Ncpu>` viewpoints are mapped simultaneously.
+
+- There are two ways to map the reads: 
+
+	- option 1: Either the reads coming from each viewpoint are mapped one viewpoint at a time. This requires one instruction per viewpoint.
+	- option 2: Either the reads coming from **all** the viewpoints are mapped in a single instruction. Each mapping is single threaded. Up to `<Ncpu>` viewpoints are mapped simultaneously.
 
 
 #### option 1
 
 	c4ctus_Mapping.sh --fastq Demultiplexing/mm10_Prefix_Amn.fastq.gz
-	                  --genome mm10
-	                  [--maxhits 5]
+	                   --genome mm10
+	                   [--maxhits 5]
 	                  
 	c4ctus_Mapping.sh --fastq Demultiplexing/mm10_Prefix_Igf2.fastq.gz
-	                  --genome mm10
-	                  [--maxhits 5]         
+	                   --genome mm10
+	                   [--maxhits 5]         
 
 	c4ctus_Mapping.sh --fastq Demultiplexing/mm10_Prefix_Dio3.fastq.gz
-	                  --genome mm10
-	                  [--maxhits 5]  
+	                   --genome mm10
+	                   [--maxhits 5]  
 	                  
 	c4ctus_Mapping.sh --fastq Demultiplexing/mm10_Prefix_Meg3-DMR.fastq.gz
-	                  --genome mm10
-	                  [--maxhits 5]  
+	                   --genome mm10
+	                   [--maxhits 5]  
 
 	                  
 #### option 2
 
 	c4ctus_MultiMapping.sh --primer barcode.fa
-	                       --group mm10_Prefix
-	                       --genome mm10
-	                       [--Ncpu 4]
-	                       [--maxhits 5]
+	                        --group mm10_Prefix
+	                        --genome mm10
+	                        [--Ncpu 4]
+	                        [--maxhits 5]
 
 This will map the all the fastq.gz named as follows: `Demultiplexing/mm10_Prefix_<Viewpoint>.fastq.gz`. Note that `mm10_Prefix` is the argument given as a file prefix in the demultiplexing step.
 
 
-This generates a Mapping folder containing
+This generates a `Mapping` folder containing:
 
 - the `.bam` and `.bai` files for each viewpoint
 - Two density files (fwd and rev) for each viewpoints (use in the following 4C-seq step)
@@ -276,6 +295,8 @@ This generates a Mapping folder containing
 
 ### e) 4C-seq module
 
+The 4C-seq modules count reads mapping at each ends of each valid restriction fragment (see generation of the 4C-Lib). It then assign a single 4C-seq score per valid restriction fragment taking into account if both extremities are compatible with reads mapping and taking into the presence of repearts. Details are available in [David et al. 2014](https://doi.org/10.1371/journal.pone.0085879).
+
 As for the mapping step, there are two ways to compute 4C-seq scores using the mapping densities: 
 
 - option 1: Either the fwd and rev density comming from each viewpoint are processed together, but **one viewpoint at a time**. This requires one instruction per viewpoint.
@@ -286,11 +307,11 @@ As for the mapping step, there are two ways to compute 4C-seq scores using the m
 	
 	#For Amn
 	c4ctus_4Cseq.sh --lib4C 4CLib/Library_mm10_DpnII_NlaIII_30bps_Rmsk_segmentsInfos.bed 
-	                --genome mm10
-	                --densF Mapping/mm10_Prefix_Amn_mm10_Density_fwd.txt
-	                --densR Mapping/mm10_Prefix_Amn_mm10_Density_rev.txt
-	                --Excl chr12:111269231-111274623
-	                --window 11
+	                 --genome mm10
+	                 --densF Mapping/mm10_Prefix_Amn_mm10_Density_fwd.txt
+	                 --densR Mapping/mm10_Prefix_Amn_mm10_Density_rev.txt
+	                 --Excl chr12:111269231-111274623
+	                 --window 11
 
 	#Same for the other viewpoint. 
 	#Don't forget to adapt the Coordinates of the region to exclude for each viewpoint
@@ -298,11 +319,12 @@ As for the mapping step, there are two ways to compute 4C-seq scores using the m
 	
 #### option 2
 	
-	c4ctus_Multi4Cseq.sh 4CLib/Library_mm10_DpnII_NlaIII_30bps_Rmsk_segmentsInfos.bed
-	                     barcode.fa
-	                     mm10_Prefix
-	                     mm10
-	                     4
+	c4ctus_Multi4Cseq.sh --lib4C 4CLib/Library_mm10_DpnII_NlaIII_30bps_Rmsk_segmentsInfos.bed
+	                      --primer barcode.fa
+	                     --group mm10_Prefix
+	                     --genome mm10
+	                     --Ncpu 4
+	                     --window 11
 
 
 This generates a 4Cseq folder containing for each `<Viewpoint>`:
@@ -318,15 +340,17 @@ This generates a 4Cseq folder containing for each `<Viewpoint>`:
 
 ### f) Normalization of 4C-seq bedgraphs
 
+To compare 4C-seq profiles between sample, an internal normalization is needed.
+
 	c4ctus_Normalize.sh --sqlFile segToFrag_mm10_Prefix_Amn_mm10_rep<Number>_all.sql
-	                    --Excl chr12:111269231-111274623
-	                    --window 11
-	                    --LeftTAD 105970000
-	                    --RightTAD 110860000
+	                     --Excl chr12:111269231-111274623
+	                     --window 11
+	                     --LeftTAD 105970000
+	                     --RightTAD 110860000
 	                    
 This generates a file ending with `_<CHR>_smoothed_11FragPerWin_Norm.bedgraph` which correspond to normalized 4C-seq scores that can be compared between samples. This normalization multiplies the 4C-seq scores by an appropriate scaling factor so that  the sum of RAW 4C score in the interval `LeftTAD` - `RightTAD` equals 1 million.
 
-For mammals, we usually define `LeftTAD` and `RightTAD` as the coordinates of the two upstream and two downstream TADs of the viewpoint-containing TAD plus 5 restriction sites upstream and downstream. This is illustrated in the Figure below:
+For mammals, we usually define `LeftTAD` and `RightTAD` as the coordinates of the two upstream and two downstream TADs of the viewpoint-containing TAD. This is illustrated in the Figure below:
 
 | Definition of the coordinates for 4C-seq scores normalization|
 |---|
